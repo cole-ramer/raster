@@ -94,4 +94,11 @@ val mean_pixel : t -> Pixel.t
     the function raises an exception. *)
 val make : ?max_val:int -> width:int -> height:int -> Pixel.t -> t
 
+(* Compares the two given images to determine if the output image matches the refernce image.
+   The function will print one of the following:
+   Nothing if the two images are the same;
+   "Images are differnt sizes" if their heights or widtsh are differnt;
+   if the two images are differnt but the same size it will print:
+   the number of pixels that are differnt, the location of the first differnt pixel,
+   what the wrong first pixel is in output, and what it is in the refernce*)
 val compare : output_image:t -> reference_image:t -> unit

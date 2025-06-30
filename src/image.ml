@@ -259,7 +259,7 @@ let compare ~output_image ~reference_image =
     height output_image = height reference_image
     && width output_image = width reference_image
   with
-  | false -> print_endline "Images differnt sizes"
+  | false -> print_endline "Images are differnt sizes"
   | true ->
     (match
        foldi
