@@ -51,7 +51,7 @@ let%expect_test "check gray_scale" =
             , snd error_information )
           with
           | false, None -> fst error_information + 1, Some refernce_pixel
-          | false, _ -> fst error_information, snd error_information
+          | false, _ -> fst error_information + 1, snd error_information
           | true, _ -> error_information)
     in
     (match first_and_total_incorrect_pixels with
@@ -61,7 +61,6 @@ let%expect_test "check gray_scale" =
          ("Total pixels that are incorrect: "
           ^ Int.to_string total_bad_pixels);
        print_endline
-         ("First incorrect pixel: location:  "
-          ^ Pixel.to_string first_bad_pixel));
+         ("First incorrect pixel:  " ^ Pixel.to_string first_bad_pixel));
     [%expect {||}]
 ;;
