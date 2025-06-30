@@ -271,6 +271,7 @@ let compare ~output_image ~reference_image =
              , image_error_information )
            with
            | false, None ->
+             (* Handles first incorect pixel case*)
              Some
                { number_of_wrong_pixels = 1
                ; first_wrong_pixel =
@@ -280,12 +281,14 @@ let compare ~output_image ~reference_image =
                    ; good_pixel = image2_pixel
                    }
                }
+             (* Handles Non-first incorrect pixel case*)
            | false, Some image_error_information_record ->
              Some
                { image_error_information_record with
                  Incorrect_image_information.number_of_wrong_pixels =
                    image_error_information_record.number_of_wrong_pixels + 1
                }
+             (*Handles correct pixel case*)
            | true, _ -> image_error_information)
      with
      | None -> ()

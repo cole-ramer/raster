@@ -46,3 +46,16 @@ let command =
           ~filename:
             (String.chop_suffix_exn filename ~suffix:".ppm" ^ "_blur.ppm")]
 ;;
+
+let%expect_test "blur image transform" =
+  let output_image =
+    transform
+      (Image.load_ppm ~filename:"../images/beach_portrait.ppm")
+      ~radius:3
+  in
+  let reference_image =
+    Image.load_ppm ~filename:"../images/reference-beach_portrait_blur.ppm"
+  in
+  Image.compare ~output_image ~reference_image;
+  [%expect {||}]
+;;
