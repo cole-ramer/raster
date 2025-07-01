@@ -1,8 +1,10 @@
 open Core
 
+(* adds the adjustment to surrounding dither*)
 let adjust_surrounding_pixels image ~x ~y ~error =
   let max_x = Image.width image - 1 in
   let max_y = Image.height image - 1 in
+  (* We convert adjustment to float then round, then to int, to increase accuracy*)
   if x < max_x
   then (
     let adjustment =
@@ -58,15 +60,16 @@ let transform image =
   let gray_image = Grayscale.transform image in
   let max_pixel_value = Image.max_val gray_image in
   Image.mapi gray_image ~f:(fun ~x ~y gray_pixel ->
+    (* Gray scale so does not matter whether we pick red, green, or blue pixel*)
     match Pixel.red gray_pixel > max_pixel_value / 2 with
     | true ->
       let error = Pixel.red gray_pixel - max_pixel_value in
       adjust_surrounding_pixels gray_image ~x ~y ~error;
-      Pixel.of_int max_pixel_value
+      Pixel.of_int max_pixel_value (* Pure white pixel *)
     | false ->
       let error = Pixel.red gray_pixel in
       adjust_surrounding_pixels gray_image ~x ~y ~error;
-      Pixel.zero)
+      Pixel.zero (* Pure black pixel *))
 ;;
 
 let command =
