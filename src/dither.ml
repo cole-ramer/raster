@@ -169,7 +169,7 @@ let adjust_surrounding_pixels_color ~error_pixel ~x ~y image =
   then adjust_pixel image error_pixel Bottom_right ~x ~y
 ;;
 
-let tranform_color image (number_of_colors : int) =
+let transform_color image ~(number_of_colors : int) =
   let max_pixel_value = Image.max_val image in
   let subgroup_size = max_pixel_value / number_of_colors in
   let threshold_size = max_pixel_value / (number_of_colors + 1) in
@@ -195,7 +195,7 @@ let tranform_color image (number_of_colors : int) =
     new_red_val, new_green_val, new_blue_val)
 ;;
 
-let command =
+let dither_command =
   Command.basic
     ~summary:"Dither an image"
     [%map_open.Command
@@ -211,6 +211,37 @@ let command =
           image
           ~filename:
             (String.chop_suffix_exn filename ~suffix:".ppm" ^ "_dither.ppm")]
+;;
+
+let dither_color_command =
+  Command.basic
+    ~summary:"Dither an image"
+    [%map_open.Command
+      let filename =
+        flag
+          "filename"
+          (required Command.Param.string)
+          ~doc:"IMAGE_FILE the PPM image file"
+      and number_of_colors =
+        flag
+          "number-of-colors"
+          (required Command.Param.int)
+          ~doc:"INT number of colors per channel for color_dither"
+      in
+      fun () ->
+        let image =
+          Image.load_ppm ~filename |> transform_color ~number_of_colors
+        in
+        Image.save_ppm
+          image
+          ~filename:
+            (String.chop_suffix_exn filename ~suffix:".ppm" ^ "_dither.ppm")]
+;;
+
+let command =
+  Command.group
+    ~summary:"dither related command"
+    [ "color", dither_color_command; "gray", dither_command ]
 ;;
 
 let%expect_test "dither transform test" =
