@@ -1,6 +1,12 @@
 open Core
 
 (* adds the adjustment to surrounding dither*)
+let is_in_bounds image ~x ~y =
+  match x >= 0, x < Image.width image, y >= 0, y < Image.height image with
+  | true, true, true, true -> true
+  | _, _, _, _ -> false
+;;
+
 let adjust_surrounding_pixels image ~x ~y ~error =
   let max_x = Image.width image - 1 in
   let max_y = Image.height image - 1 in
@@ -70,6 +76,123 @@ let transform image =
       let error = Pixel.red gray_pixel in
       adjust_surrounding_pixels gray_image ~x ~y ~error;
       Pixel.zero (* Pure black pixel *))
+;;
+
+module Error_adjustment_directions = struct
+  type t =
+    | Right
+    | Bottom_left
+    | Bottom
+    | Bottom_right
+end
+
+module Color = struct
+  type t =
+    | Red
+    | Green
+    | Blue
+end
+
+let get_adjusted_value (color : Color.t) multiplyer error_pixel =
+  match color with
+  | Red ->
+    Int.to_float (Pixel.red error_pixel) *. multiplyer /. 16.
+    |> Float.round
+    |> Float.to_int
+  | Blue ->
+    Int.to_float (Pixel.blue error_pixel) *. multiplyer /. 16.
+    |> Float.round
+    |> Float.to_int
+  | Green ->
+    Int.to_float (Pixel.green error_pixel) *. multiplyer /. 16.
+    |> Float.round
+    |> Float.to_int
+;;
+
+let get_adjusted_pixel multiplyer error_pixel =
+  let adjusted_red = get_adjusted_value Red multiplyer error_pixel in
+  let adjusted_green = get_adjusted_value Green multiplyer error_pixel in
+  let adjusted_blue = get_adjusted_value Blue multiplyer error_pixel in
+  adjusted_red, adjusted_blue, adjusted_green
+;;
+
+let adjust_pixel
+      image
+      error_pixel
+      (adjustment_direction : Error_adjustment_directions.t)
+      ~x
+      ~y
+  =
+  match adjustment_direction with
+  | Right ->
+    let multiplyer = 7. in
+    let adjustment_pixel = get_adjusted_pixel multiplyer error_pixel in
+    Image.set
+      image
+      ~x:(x + 1)
+      ~y
+      (Pixel.( + ) adjustment_pixel (Image.get image ~x:(x + 1) ~y))
+  | Bottom_left ->
+    let multiplyer = 3. in
+    let adjustment_pixel = get_adjusted_pixel multiplyer error_pixel in
+    Image.set
+      image
+      ~x:(x - 1)
+      ~y:(y + 1)
+      (Pixel.( + ) (Image.get image ~x:(x - 1) ~y:(y + 1)) adjustment_pixel)
+  | Bottom ->
+    let multiplyer = 5. in
+    let adjustment_pixel = get_adjusted_pixel multiplyer error_pixel in
+    Image.set
+      image
+      ~x
+      ~y:(y + 1)
+      (Pixel.( + ) (Image.get image ~x ~y:(y + 1)) adjustment_pixel)
+  | Bottom_right ->
+    let multiplyer = 1. in
+    let adjustment_pixel = get_adjusted_pixel multiplyer error_pixel in
+    Image.set
+      image
+      ~x:(x + 1)
+      ~y:(y + 1)
+      (Pixel.( + ) (Image.get image ~x:(x + 1) ~y:(y + 1)) adjustment_pixel)
+;;
+
+let adjust_surrounding_pixels_color ~error_pixel ~x ~y image =
+  if is_in_bounds image ~x:(x + 1) ~y
+  then adjust_pixel image error_pixel Right ~x ~y;
+  if is_in_bounds image ~x:(x - 1) ~y:(y + 1)
+  then adjust_pixel image error_pixel Bottom_left ~x ~y;
+  if is_in_bounds image ~x ~y:(y + 1)
+  then adjust_pixel image error_pixel Bottom ~x ~y;
+  if is_in_bounds image ~x:(x + 1) ~y:(y + 1)
+  then adjust_pixel image error_pixel Bottom_right ~x ~y
+;;
+
+let tranform_color image (number_of_colors : int) =
+  let max_pixel_value = Image.max_val image in
+  let subgroup_size = max_pixel_value / number_of_colors in
+  let threshold_size = max_pixel_value / (number_of_colors + 1) in
+  Image.mapi image ~f:(fun ~x ~y image_pixel ->
+    let new_red_val =
+      Pixel.red image_pixel / threshold_size * subgroup_size
+    in
+    let new_green_val =
+      Pixel.green image_pixel / threshold_size * subgroup_size
+    in
+    let new_blue_val =
+      Pixel.blue image_pixel / threshold_size * subgroup_size
+    in
+    let old_red_val = Pixel.red image_pixel in
+    let old_green_val = Pixel.green image_pixel in
+    let old_blue_val = Pixel.blue image_pixel in
+    let error_pixel : Pixel.t =
+      ( old_red_val - new_red_val
+      , old_green_val - new_green_val
+      , old_blue_val - new_blue_val )
+    in
+    adjust_surrounding_pixels_color ~error_pixel ~x ~y image;
+    new_red_val, new_green_val, new_blue_val)
 ;;
 
 let command =

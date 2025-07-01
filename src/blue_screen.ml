@@ -1,5 +1,40 @@
 open Core
 
+let is_pixel_mostly_blue pixel =
+  Pixel.blue pixel > Pixel.red pixel + Pixel.green pixel
+;;
+
+(* let are_surrounding_pixels_mostly_blue ~x ~y foreground_image =
+   let is_left_blue_or_edge =
+   match x > 0 with
+   | true -> is_pixel_mostly_blue (Image.get ~x ~y foreground_image)
+   | false -> true
+   in
+   let is_right_blue_or_edge =
+   match x < Image.width foreground_image - 1 with
+   | true -> is_pixel_mostly_blue (Image.get ~x ~y foreground_image)
+   | false -> true
+   in
+   let is_up_blue_or_edge =
+   match y > 0 with
+   | true -> is_pixel_mostly_blue (Image.get ~x ~y foreground_image)
+   | false -> true
+   in
+   let is_down_blue_or_edge =
+   match y < Image.height foreground_image - 1 with
+   | true -> is_pixel_mostly_blue (Image.get ~x ~y foreground_image)
+   | false -> true
+   in
+   let is_surrounding_blue_list =
+   [ is_left_blue_or_edge ; is_right_blue_or_edge ; is_up_blue_or_edge ; is_down_blue_or_edge ]
+   in
+   let total_blue_surrounding =
+   List.fold is_surrounding_blue_list ~init:0 ~f:(fun acc is_blue_or_edge ->
+   match is_blue_or_edge with true -> acc + 1 | false -> acc)
+   in
+   total_blue_surrounding = 4
+   ;; *)
+
 (* You need to change the implementation of this function so that it
    replaces the "blue" pixels of the foreground image with pixels from
    the corresponding position in the background image instead of
@@ -7,11 +42,9 @@ open Core
 *)
 let transform ~foreground ~background =
   Image.mapi foreground ~f:(fun ~x ~y foreground_pixel ->
-    match
-      Pixel.blue foreground_pixel
-      > Pixel.red foreground_pixel + Pixel.green foreground_pixel
-    with
-    | true -> Image.get background ~x ~y
+    let background_pixel = Image.get background ~x ~y in
+    match is_pixel_mostly_blue foreground_pixel with
+    | true -> background_pixel
     | false -> foreground_pixel)
 ;;
 
