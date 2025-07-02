@@ -116,40 +116,40 @@ let get_adjusted_pixel multiplyer error_pixel =
   adjusted_red, adjusted_blue, adjusted_green
 ;;
 
-(* let get_adjusted_pixel_in_val_range
-   ~pixel_getting_adjusted
-   ~adjustment_pixel
-   max_val
-   =
-   let adjusted_red_val =
-   match Pixel.red adjustment_pixel > 0 with
-   | true ->
-   min
-   (Pixel.red adjustment_pixel + Pixel.red pixel_getting_adjusted)
-   max_val
-   | false ->
-   max (Pixel.red adjustment_pixel + Pixel.red pixel_getting_adjusted) 0
-   in
-   let adjusted_blue_bal =
-   match Pixel.blue adjustment_pixel > 0 with
-   | true ->
-   min
-   (Pixel.blue adjustment_pixel + Pixel.blue pixel_getting_adjusted)
-   max_val
-   | false ->
-   max (Pixel.blue adjustment_pixel + Pixel.blue pixel_getting_adjusted) 0
-   in
-   let adjusted_green_val =
-   match Pixel.green adjustment_pixel > 0 with
-   | true ->
-   min
-   (Pixel.blue adjustment_pixel + Pixel.blue pixel_getting_adjusted)
-   max_val
-   | false ->
-   max (Pixel.blue adjustment_pixel + Pixel.blue pixel_getting_adjusted) 0
-   in
-   adjusted_red_val, adjusted_green_val, adjusted_blue_bal
-   ;; *)
+let get_adjusted_pixel_in_val_range
+      ~pixel_getting_adjusted
+      ~adjustment_pixel
+      max_val
+  =
+  let adjusted_red_val =
+    match Pixel.red adjustment_pixel > 0 with
+    | true ->
+      min
+        (Pixel.red adjustment_pixel + Pixel.red pixel_getting_adjusted)
+        max_val
+    | false ->
+      max (Pixel.red adjustment_pixel + Pixel.red pixel_getting_adjusted) 0
+  in
+  let adjusted_blue_bal =
+    match Pixel.blue adjustment_pixel > 0 with
+    | true ->
+      min
+        (Pixel.blue adjustment_pixel + Pixel.blue pixel_getting_adjusted)
+        max_val
+    | false ->
+      max (Pixel.blue adjustment_pixel + Pixel.blue pixel_getting_adjusted) 0
+  in
+  let adjusted_green_val =
+    match Pixel.green adjustment_pixel > 0 with
+    | true ->
+      min
+        (Pixel.blue adjustment_pixel + Pixel.blue pixel_getting_adjusted)
+        max_val
+    | false ->
+      max (Pixel.blue adjustment_pixel + Pixel.blue pixel_getting_adjusted) 0
+  in
+  adjusted_red_val, adjusted_green_val, adjusted_blue_bal
+;;
 
 let adjust_pixel
       image
@@ -158,7 +158,7 @@ let adjust_pixel
       ~x
       ~y
   =
-  (* let max_val = Image.max_val image in *)
+  let max_val = Image.max_val image in
   match adjustment_direction with
   | Right ->
     let multiplyer = 7. in
@@ -177,7 +177,11 @@ let adjust_pixel
       image
       ~x:(x + 1)
       ~y
-      (Pixel.( + ) (Image.get image ~x:(x + 1) ~y) adjustment_pixel)
+      (get_adjusted_pixel_in_val_range
+         ~pixel_getting_adjusted:(Image.get image ~x:(x + 1) ~y)
+         ~adjustment_pixel
+         max_val)
+    (* (Pixel.( + ) (Image.get image ~x:(x + 1) ~y) adjustment_pixel) *)
   | Bottom_left ->
     let multiplyer = 3. in
     let adjustment_pixel = get_adjusted_pixel multiplyer error_pixel in
@@ -195,11 +199,10 @@ let adjust_pixel
       image
       ~x:(x - 1)
       ~y:(y + 1)
-      (Pixel.( + ) (Image.get image ~x:(x - 1) ~y:(y + 1)) adjustment_pixel)
-    (* (get_adjusted_pixel_in_val_range
-       ~pixel_getting_adjusted:(Image.get image ~x:(x - 1) ~y:(y + 1))
-       ~adjustment_pixel
-       max_val) *)
+      (get_adjusted_pixel_in_val_range
+         ~pixel_getting_adjusted:(Image.get image ~x:(x - 1) ~y:(y + 1))
+         ~adjustment_pixel
+         max_val)
   | Bottom ->
     let multiplyer = 5. in
     let adjustment_pixel = get_adjusted_pixel multiplyer error_pixel in
@@ -217,11 +220,11 @@ let adjust_pixel
       image
       ~x
       ~y:(y + 1)
-      (Pixel.( + ) (Image.get image ~x ~y:(y + 1)) adjustment_pixel)
-    (* (get_adjusted_pixel_in_val_range
-       ~pixel_getting_adjusted:(Image.get image ~x ~y:(y + 1))
-       ~adjustment_pixel
-       max_val) *)
+        (* (Pixel.( + ) (Image.get image ~x ~y:(y + 1)) adjustment_pixel) *)
+      (get_adjusted_pixel_in_val_range
+         ~pixel_getting_adjusted:(Image.get image ~x ~y:(y + 1))
+         ~adjustment_pixel
+         max_val)
   | Bottom_right ->
     let multiplyer = 1. in
     let adjustment_pixel = get_adjusted_pixel multiplyer error_pixel in
