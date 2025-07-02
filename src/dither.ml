@@ -116,6 +116,41 @@ let get_adjusted_pixel multiplyer error_pixel =
   adjusted_red, adjusted_blue, adjusted_green
 ;;
 
+(* let get_adjusted_pixel_in_val_range
+   ~pixel_getting_adjusted
+   ~adjustment_pixel
+   max_val
+   =
+   let adjusted_red_val =
+   match Pixel.red adjustment_pixel > 0 with
+   | true ->
+   min
+   (Pixel.red adjustment_pixel + Pixel.red pixel_getting_adjusted)
+   max_val
+   | false ->
+   max (Pixel.red adjustment_pixel + Pixel.red pixel_getting_adjusted) 0
+   in
+   let adjusted_blue_bal =
+   match Pixel.blue adjustment_pixel > 0 with
+   | true ->
+   min
+   (Pixel.blue adjustment_pixel + Pixel.blue pixel_getting_adjusted)
+   max_val
+   | false ->
+   max (Pixel.blue adjustment_pixel + Pixel.blue pixel_getting_adjusted) 0
+   in
+   let adjusted_green_val =
+   match Pixel.green adjustment_pixel > 0 with
+   | true ->
+   min
+   (Pixel.blue adjustment_pixel + Pixel.blue pixel_getting_adjusted)
+   max_val
+   | false ->
+   max (Pixel.blue adjustment_pixel + Pixel.blue pixel_getting_adjusted) 0
+   in
+   adjusted_red_val, adjusted_green_val, adjusted_blue_bal
+   ;; *)
+
 let adjust_pixel
       image
       error_pixel
@@ -123,40 +158,94 @@ let adjust_pixel
       ~x
       ~y
   =
+  (* let max_val = Image.max_val image in *)
   match adjustment_direction with
   | Right ->
     let multiplyer = 7. in
     let adjustment_pixel = get_adjusted_pixel multiplyer error_pixel in
+    if
+      Pixel.blue (Image.get image ~x:(x + 1) ~y)
+      + Pixel.blue adjustment_pixel
+      > Image.max_val image
+    then
+      print_endline
+        ("Rigth"
+         ^ Int.to_string
+             (Pixel.blue (Image.get image ~x:(x + 1) ~y)
+              + Pixel.blue adjustment_pixel));
     Image.set
       image
       ~x:(x + 1)
       ~y
-      (Pixel.( + ) adjustment_pixel (Image.get image ~x:(x + 1) ~y))
+      (Pixel.( + ) (Image.get image ~x:(x + 1) ~y) adjustment_pixel)
   | Bottom_left ->
     let multiplyer = 3. in
     let adjustment_pixel = get_adjusted_pixel multiplyer error_pixel in
+    if
+      Pixel.blue (Image.get image ~x:(x - 1) ~y:(y + 1))
+      + Pixel.blue adjustment_pixel
+      > Image.max_val image
+    then
+      print_endline
+        ("Bottom_left_blue"
+         ^ Int.to_string
+             (Pixel.blue (Image.get image ~x:(x - 1) ~y:(y + 1))
+              + Pixel.blue adjustment_pixel));
     Image.set
       image
       ~x:(x - 1)
       ~y:(y + 1)
       (Pixel.( + ) (Image.get image ~x:(x - 1) ~y:(y + 1)) adjustment_pixel)
+    (* (get_adjusted_pixel_in_val_range
+       ~pixel_getting_adjusted:(Image.get image ~x:(x - 1) ~y:(y + 1))
+       ~adjustment_pixel
+       max_val) *)
   | Bottom ->
     let multiplyer = 5. in
     let adjustment_pixel = get_adjusted_pixel multiplyer error_pixel in
+    if
+      Pixel.blue (Image.get image ~x ~y:(y + 1))
+      + Pixel.blue adjustment_pixel
+      > Image.max_val image
+    then
+      print_endline
+        ("Bottom"
+         ^ Int.to_string
+             (Pixel.blue (Image.get image ~x ~y:(y + 1))
+              + Pixel.blue adjustment_pixel));
     Image.set
       image
       ~x
       ~y:(y + 1)
       (Pixel.( + ) (Image.get image ~x ~y:(y + 1)) adjustment_pixel)
+    (* (get_adjusted_pixel_in_val_range
+       ~pixel_getting_adjusted:(Image.get image ~x ~y:(y + 1))
+       ~adjustment_pixel
+       max_val) *)
   | Bottom_right ->
     let multiplyer = 1. in
     let adjustment_pixel = get_adjusted_pixel multiplyer error_pixel in
+    if
+      Pixel.blue (Image.get image ~x:(x + 1) ~y:(y + 1))
+      + Pixel.blue adjustment_pixel
+      > Image.max_val image
+    then
+      print_endline
+        ("Bottom_right_blue"
+         ^ Int.to_string
+             (Pixel.blue (Image.get image ~x:(x + 1) ~y:(y + 1))
+              + Pixel.blue adjustment_pixel));
     Image.set
       image
       ~x:(x + 1)
       ~y:(y + 1)
       (Pixel.( + ) (Image.get image ~x:(x + 1) ~y:(y + 1)) adjustment_pixel)
 ;;
+
+(* (get_adjusted_pixel_in_val_range
+   ~pixel_getting_adjusted:(Image.get image ~x:(x + 1) ~y:(y + 1))
+   ~adjustment_pixel
+   max_val) *)
 
 let adjust_surrounding_pixels_color ~error_pixel ~x ~y image =
   if is_in_bounds image ~x:(x + 1) ~y
@@ -171,17 +260,34 @@ let adjust_surrounding_pixels_color ~error_pixel ~x ~y image =
 
 let transform_color image ~(number_of_colors : int) =
   let max_pixel_value = Image.max_val image in
-  let subgroup_size = max_pixel_value / number_of_colors in
-  let threshold_size = max_pixel_value / (number_of_colors + 1) in
+  print_endline (Int.to_string max_pixel_value);
+  let differnce_between_allowed_values =
+    Int.to_float max_pixel_value /. Int.to_float (number_of_colors - 1)
+  in
   Image.mapi image ~f:(fun ~x ~y image_pixel ->
     let new_red_val =
-      Pixel.red image_pixel / threshold_size * subgroup_size
+      Int.to_float (Pixel.red image_pixel)
+      /. differnce_between_allowed_values
+      |> Float.round
+      |> Float.( * ) differnce_between_allowed_values
+      |> Float.round
+      |> Float.to_int
     in
     let new_green_val =
-      Pixel.green image_pixel / threshold_size * subgroup_size
+      Int.to_float (Pixel.green image_pixel)
+      /. differnce_between_allowed_values
+      |> Float.round
+      |> Float.( * ) differnce_between_allowed_values
+      |> Float.round
+      |> Float.to_int
     in
     let new_blue_val =
-      Pixel.blue image_pixel / threshold_size * subgroup_size
+      Int.to_float (Pixel.blue image_pixel)
+      /. differnce_between_allowed_values
+      |> Float.round
+      |> Float.( * ) differnce_between_allowed_values
+      |> Float.round
+      |> Float.to_int
     in
     let old_red_val = Pixel.red image_pixel in
     let old_green_val = Pixel.green image_pixel in
@@ -191,7 +297,10 @@ let transform_color image ~(number_of_colors : int) =
       , old_green_val - new_green_val
       , old_blue_val - new_blue_val )
     in
+    (* print_endline "before adjustment"; *)
     adjust_surrounding_pixels_color ~error_pixel ~x ~y image;
+    if new_blue_val > max_pixel_value
+    then print_endline ("new_blue_val" ^ Int.to_string new_blue_val);
     new_red_val, new_green_val, new_blue_val)
 ;;
 
